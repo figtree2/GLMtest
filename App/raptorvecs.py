@@ -19,7 +19,7 @@ import os
 
 os.environ['OPENAI_API_KEY'] = 'sk-proj-KBb5IeejgH01LlueVnk2T3BlbkFJjwqsHS254cciQHGRTe3D'
 embd = OpenAIEmbeddings()
-model = getLLM(0.55)
+model = getLLM(0.2)
 
 #performs global dimension reduction using UMAP, 
 def clusterEmbedGlob(embeddings: np.ndarray, dim: int, n_neighbors: Optional[int] = None, metric:str = "cosine"):
@@ -212,8 +212,6 @@ def makeVecs():
     for level in sorted(docs.keys()):
         summaries = docs[level][1]["summaries"].tolist()
         txt.extend(summaries)
-   
-    
     vectordb(txt)
 
 
