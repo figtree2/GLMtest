@@ -36,5 +36,3 @@ def fusion(results: list[list], k = 60):
 
     return reranked_results
 
-
-print(raptRetrieve().invoke("昨天没打卡")[0])

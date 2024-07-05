@@ -31,7 +31,7 @@ def genHist(question: str, q_a_pairs:str = ""):
 
             Use the above context and any background question + answer pairs to answer the question. If the answer can't be found from the context or from old q_a_pairs, say you don't know, or ask for more clarification from the user: : \n {question}
                 
-               """
+            """
     prompt = ChatPromptTemplate.from_template(template)
     rag_chain = (
             {"context": itemgetter("question") | raptRetrieve() | format_docs, "question": itemgetter("question"),
