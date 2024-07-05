@@ -7,48 +7,90 @@ from zhipuai import ZhipuAI
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 from langchain.prompts import ChatPromptTemplate
+from langchain_community.chat_message_histories import ChatMessageHistory
+from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_core.prompts import MessagesPlaceholder
 from operator import itemgetter
-from langchain import hub
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.retrievers import RetrieverLike, RetrieverOutputLike
+from langchain_core.runnables import RunnableBranch
+from langchain_core.language_models import LanguageModelLike
+from langchain.chains.combine_documents import create_stuff_documents_chain
+
 
 vdb = getVDB()
 retriever = getRetriever(vdb)
 llm = getLLM(0.3)
 
-def genHist(question: str, q_a_pairs:str = ""):
-    def format_qa_pair(question: str, answer):
-
-        formatted_string = ""
-        formatted_string += f"Question: {question}\nAnswer: {answer}\n\n"
-        return formatted_string.strip()
-
-    template = """
-            Here is the question you need to answer:
-            \n --- \n {question} \n --- \n
-            
-            Here is additional context relevant to the question, along with the history q_a_pairs. 
-            \n --- \n {context} \n --- \n
-            \n --- \n {q_a_pairs} \n --- \n
-
-            Use the above context and any background question + answer pairs to answer the question. If the answer can't be found from the context or from old q_a_pairs, say you don't know, or ask for more clarification from the user: : \n {question}
-                
-            """
-    prompt = ChatPromptTemplate.from_template(template)
-    rag_chain = (
-            {"context": itemgetter("question") | raptRetrieve() | format_docs, "question": itemgetter("question"),
-             "q_a_pairs": itemgetter("q_a_pairs")
-             }
-             | prompt
-             | llm
-             | StrOutputParser()
+def create_history_aware_retriever(
+    llm: LanguageModelLike,
+    retriever: RetrieverLike,
+    prompt: BasePromptTemplate,
+) -> RetrieverOutputLike:
+    if "input" not in prompt.input_variables:
+        raise ValueError(
+            "Expected `input` to be a prompt variable, "
+            f"but got {prompt.input_variables}"
         )
 
-    answer = rag_chain.invoke({"question": question, "q_a_pairs": q_a_pairs})
-    q_a_pair = format_qa_pair(question, answer)
-    q_a_pairs = q_a_pairs + "\n---\n" + q_a_pair
-    return answer, q_a_pairs
+    retrieve_documents: RetrieverOutputLike = RunnableBranch(
+        (
+            # Both empty string and empty list evaluate to False
+            lambda x: not x.get("chat_history", False),
+            # If no chat history, then we just pass input to retriever
+            (lambda x: x["input"]) | retriever,
+        ),
+        # If chat history, then we pass inputs to LLM chain, then to retriever
+        prompt | llm | StrOutputParser() | retriever,
+    ).with_config(run_name="chat_retriever_chain")
+    return retrieve_documents
+
+def genHist(question: str, id:str, store:dict):
+    
+    def get_session_history(session_id: str) -> BaseChatMessageHistory:
+        if session_id not in store:
+            store[session_id] = ChatMessageHistory()
+        return store[session_id]
+
+    template = """
+            You are an assistant at the company Hepalink designed to answer questions the employees at the company might have. Use the following context to answer the question. If the answer isn't specifically stated in the context, then say you don't know, ask for more details, and then stop answering. Context: {context}
+                
+            """
+    q_prompt = ChatPromptTemplate.from_messages([
+        ("system", template),
+        MessagesPlaceholder("chat_history"),
+        ("human", "{input}")
+    ])
+    contextualize_q_system_prompt = (
+        "Given a chat history and the latest user question "
+        "which might reference context in the chat history, "
+        "formulate a standalone question which can be understood "
+        "without the chat history. Do NOT answer the question, "
+        "just reformulate it if needed and otherwise return it as is"
+    )
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", contextualize_q_system_prompt),
+        MessagesPlaceholder("chat_history"),
+        ("human", "{input}")
+    ])
+    history_aware_retriever = create_history_aware_retriever(llm, raptRetrieve() , prompt)
+    qa_chain = create_stuff_documents_chain(llm, q_prompt)
+    rag_chain = create_retrieval_chain(history_aware_retriever, qa_chain)
+    conversational_rag_chain = RunnableWithMessageHistory(
+        rag_chain, 
+        get_session_history, 
+        input_messages_key = "input", 
+        history_messages_key = "chat_history", 
+        output_messages_key = "answer"
+    )
+    
+
+    answer = conversational_rag_chain.stream({"input": question}, config = {"configurable": {"session_id": id}})
+    return answer
 
 def normalGen(question):
-    template = """You are an AI system assistant who is designed to answer company questions from employees based on company data. If you don't have an exact answer from the docs, say you aren't sure and ask for more specific details from the user. Answer the question based only on the following context: {context}
+    template = """You are an AI system assistant who is designed to answer company questions from employees based on company data. If the information asked if not specifically provided in the docs, say you can't answer or ask for more details. Answer the question based only on the following context: {context}
 
                 Question: {question}"""
     

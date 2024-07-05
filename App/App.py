@@ -2,8 +2,13 @@ from generate import *
 
 q_a_pairs = ""
 test= []
-
+store = {}
+test_id = "123"
 while True:
-    question = input("请输入您的问题：")
-    answer, q_a_pairs = genHist(question, q_a_pairs)
-    print(answer)
+    print("请输入您的问题：")
+    question = input()
+    #answer = normalGen(question)
+    answer = genHist(question, test_id, store)
+    for chunk in answer:
+        if answer_chunk := chunk.get("answer"):
+            print(f"{answer_chunk}", end = "")
