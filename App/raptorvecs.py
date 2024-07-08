@@ -214,4 +214,3 @@ def makeVecs():
         txt.extend(summaries)
     vectordb(txt)
 
-
