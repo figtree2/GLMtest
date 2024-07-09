@@ -23,12 +23,21 @@ def run_app_back(input_text):
     resp = run_app(input_text, {}, "234")
 
     try:
+        #print(resp)
+        #yield buffer.getvalue()
+        #buffer.truncate(0)
+        #buffer.seek(0)
         for chunk in resp:
-            if answer_chunk := chunk.get("answer"):
-                print(f"{answer_chunk}", end = "", flush = True)
-                yield buffer.getvalue()
-                buffer.truncate(0)
-                buffer.seek(0)
+            print(f"{chunk}", end = "", flush = True)
+            yield buffer.getvalue()
+            buffer.truncate(0)
+            buffer.seek(0)
+        #for chunk in resp:
+        #    if answer_chunk := chunk.get("answer"):
+        #        print(f"{answer_chunk}", end = "", flush = True)
+        #        yield buffer.getvalue()
+        #        buffer.truncate(0)
+        #        buffer.seek(0)
     finally:
         sys.stdout = sys.__stdout__
 

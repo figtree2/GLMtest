@@ -28,7 +28,7 @@ def create_retrieval_chain(
     return retrieval_chain
 
 def getRetriever(vdb):
-    retriever = vdb.as_retriever(search_kwargs = {"k": 5})
+    retriever = vdb.as_retriever(search_type = "mmr")
     return retriever
 
 def getVDB():
@@ -36,7 +36,7 @@ def getVDB():
     return vdb
 
 def raptRetrieve():
-    retriever = getVDB().as_retriever()
+    retriever = getVDB().as_retriever(search_type = "mmr")
     return retriever
 
 def fusion(results: list[list], k = 60):
@@ -59,3 +59,11 @@ def fusion(results: list[list], k = 60):
 
     return reranked_results
 
+def union(docs: list[list]):
+    flattened = [dumps(doc) for sublist in docs for doc in sublist]
+    unique = list(set(flattened))
+
+    return [loads(doc) for doc in unique]
+
+#retv = getRetriever(getVDB())
+#print(retv.invoke("来晚了咋办"))

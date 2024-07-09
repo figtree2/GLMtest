@@ -21,7 +21,7 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 
 vdb = getVDB()
 retriever = getRetriever(vdb)
-llm = getLLM(0.3)
+llm = getLLM(0.5)
 
 def create_history_aware_retriever(
     llm: LanguageModelLike,
@@ -54,7 +54,8 @@ def genHist(question: str, id:str, store:dict):
         return store[session_id]
 
     template = """
-            You are an assistant at the company Hepalink designed to answer questions the employees at the company might have. Use the following context to answer the question. If the answer isn't specifically stated in the context, then say you don't know, ask for more details, and then stop answering. Context: {context}
+            You are an AI system assistant who is designed to answer company questions from employees based on company data. Output all the information related to the topic if it can be found on the docs, regardless of whether it is specifically asked. Answer the question based only on the following context: {context}
+
                 
             """
     q_prompt = ChatPromptTemplate.from_messages([
@@ -89,8 +90,33 @@ def genHist(question: str, id:str, store:dict):
     answer = conversational_rag_chain.stream({"input": question}, config = {"configurable": {"session_id": id}})
     return answer
 
+
+def multiGen(question):
+    retriever = raptRetrieve()
+    template = """You are an AI language model assistant. Your task is to use different wording with same meaning to generate five different versions of the given user questions to retrieve relevant documents from a vectorstore database. By generating multiple perspectives on the user question, your goal is to help the user overcome some of the limitations of the distance-based similarity search. Only output the generated queries. 请用原本问题做一些相关的问题。 问题： {question}"""
+    multi = ChatPromptTemplate.from_template(template)
+    generate_queries = (multi | llm | StrOutputParser() | (lambda x: x.split("\n")))
+
+    retrieval_chain = generate_queries | retriever.map() | union
+
+    template = """You are an AI system assistant who is designed to answer company questions from employees based on company data. Output all the information related to the topic if it can be found on the docs, regardless of whether it is specifically asked. Answer the question based only on the following context: {context}
+
+                Question: {question}"""
+    
+    prompt = ChatPromptTemplate.from_template(template)
+
+    rag_chain = (
+        {"context": retrieval_chain,
+         "question": itemgetter("question") }
+         | prompt
+         |llm
+         |StrOutputParser()
+    )
+
+    return rag_chain.stream({"question":question})
+
 def normalGen(question):
-    template = """You are an AI system assistant who is designed to answer company questions from employees based on company data. If the information asked if not specifically provided in the docs, say you can't answer or ask for more details. Answer the question based only on the following context: {context}
+    template = """You are an AI system assistant who is designed to answer company questions from employees based on company data. Output all the information related to the topic if it can be found on the docs, regardless of whether it is specifically asked. Answer the question based only on the following context: {context}
 
                 Question: {question}"""
     
