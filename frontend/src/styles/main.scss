@@ -4,6 +4,11 @@ html, body, #root, .full-screen-container, .full-screen-row, .full-screen-col {
     margin: 0;
     padding: 0;
 }
+.fill-height{
+    min-height: 100%;
+    height: auto !important;
+    height: 100%;
+}
 
 .scrollable-div {
     white-space: pre-wrap;
@@ -42,13 +47,11 @@ html, body, #root, .full-screen-container, .full-screen-row, .full-screen-col {
 
 
 .left-column{
-    width: 30%;
     background-color:black;
     border: 2px solid black;
 }
 
 .right-column{
-    width: 70%;
     background-color: gray;
     border: 2px solid gray;
 }

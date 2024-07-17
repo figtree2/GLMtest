@@ -8,11 +8,10 @@ import '../styles/textbox.scss'
 const socket = io('http://127.0.0.1:5000')
 
 function App() {
-  const [curId, setCurId] = useState('')
+  const [curId, setCurId] = useState('对话三')
   const textAreaRef = useRef(null)
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState([])
-  const [data, setData] = useState({})
   const [history, setHistory] = useState(() => {
     const storedHistory = localStorage.getItem('history')
     return storedHistory ? JSON.parse(storedHistory) : {};
@@ -33,6 +32,7 @@ function App() {
       storeHistory(data.history)
     })
 
+
     scrollToBottom()
 
     if(textAreaRef.current) {
@@ -40,21 +40,46 @@ function App() {
       textAreaRef.current.style.height = `${textAreaRef.current.scrollHeight}px`
     }
 
-    const storedData = localStorage.getItem('history')
-    if(storedData){
-      setData(JSON.parse(storedData))
-    }
+
 
     return ()=>{
       socket.off('message')
+      storeMessages(curId, messages)
     }
   
-  }, [messages, input])
+  }, [curId, messages, input])
 
   const storeHistory = (data) => {
     setHistory(data)
     console.log(data)
     localStorage.setItem('history', JSON.stringify(data))
+  }
+
+  const getMessages = (id) => {
+    const storedData = localStorage.getItem('chats')
+    if (storedData) {
+      const data = JSON.parse(storedData)
+      console.log(data[id])
+      setMessages("")
+      if(data[id]){
+        setMessages(data[id])
+      }
+    }
+  }
+
+  const storeMessages = (id, message) => {
+    const storedData = localStorage.getItem('chats')
+    let data = storedData ? JSON.parse(storedData) : {};
+
+    if(data[id]){
+      delete data[id]
+      data[id] = message
+    }
+    else{
+      data[id] = message
+    }
+
+    localStorage.setItem('chats', JSON.stringify(data))
   }
 
   const handleSubmit = async (e) => {
@@ -68,13 +93,14 @@ function App() {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ input: input, store: history, id: "123" })
+      body: JSON.stringify({ input: input, store: history, id: curId })
     })
     setInput('')
   }
 
   const changeHistory = (id) => {
     setCurId(id)
+    getMessages(id)
   }
 
   const renderMessages = (message) => {
@@ -113,14 +139,14 @@ function App() {
 
 
   return (
-    <Container fluid className = "full-screen-container">
-      <Row className = "full-screen-row">
+    <Container fluid>
+      <Row>
         <Col xs = {12} md = {2} className = "left-column">
           <div className = "content">
             <ListGroup className = "buttons-list">
-              {Object.keys(data).map((key) => (
+              {Object.keys(history).map((key) => (
                 <ListGroup.Item key = {key}>
-                  <Button variant = "primary" onClick = {() => setHistory(key)}>
+                  <Button variant = "primary" onClick = {() => changeHistory(key)}>
                       {key}
                   </Button>
                 </ListGroup.Item>
