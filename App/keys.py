@@ -16,7 +16,7 @@ def getLangKey():
 def getLLM(temp):
     llm = ChatOpenAI(
     temperature = temp,
-    model = "glm-4",
+    model = "glm-4-0520",
     openai_api_key = getAPI(),
     openai_api_base = "https://open.bigmodel.cn/api/paas/v4/",
     )

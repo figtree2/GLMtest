@@ -1,0 +1,54 @@
+html, body, #root, .full-screen-container, .full-screen-row, .full-screen-col {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.scrollable-div {
+    white-space: pre-wrap;
+    height:  650px;
+    overflow-y: scroll;
+    border: 1px solid transparent;
+    padding: 10px;
+    width: 100%;
+}
+
+.bold{
+    font-weight: bold;
+}
+
+.container {
+    display: flex; 
+    flex-direction: column; 
+    align-items: center;
+}
+
+.message{
+    display: inline-block; 
+    margin: 5px 0;
+    white-space: pre-wrap;
+}
+
+.message.backend {
+    white-space: pre-wrap;
+}
+
+.message.user{
+    font-weight: bold;
+    display: flex;
+    justify-content:flex-end;
+}
+
+
+.left-column{
+    width: 30%;
+    background-color:black;
+    border: 2px solid black;
+}
+
+.right-column{
+    width: 70%;
+    background-color: gray;
+    border: 2px solid gray;
+}

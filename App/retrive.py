@@ -8,6 +8,8 @@ from langchain_core.retrievers import (
 )
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from typing import Any, Dict, Union
+import os
+from itertools import islice
 
 
 def create_retrieval_chain(
@@ -31,9 +33,28 @@ def getRetriever(vdb):
     retriever = vdb.as_retriever(search_type = "mmr")
     return retriever
 
-def getVDB():
-    vdb = Chroma(persist_directory = './App/Data/Vectors/databases/',embedding_function=OpenAIEmbeddings())
+def getVDB(name = "HR"):
+    if not os.path.exists(f"./App/Data/Vectors/databases/{name}"):
+        print("this directory doens't exist")
+        return
+    vdb = Chroma(persist_directory = f'./App/Data/Vectors/databases/{name}',embedding_function=OpenAIEmbeddings())
     return vdb
+
+def listVDB(names:list[str]):
+    vdb = Chroma(persist_directory = f'./App/Data/Vectors/databases/{names[0]}',embedding_function=OpenAIEmbeddings())
+    for i in islice(names, 1, None):
+        temp = Chroma(persist_directory = f'./App/Data/Vectors/databases/{i}',embedding_function=OpenAIEmbeddings())
+        data = temp._collection.get(include=['documents', 'metadatas', 'embeddings'])
+        vdb._collection.add(
+            embeddings= data['embeddings'],
+            documents=data['documents'],
+            metadatas=data['metadatas'],
+            ids=data['ids']
+        )
+    return vdb
+
+def allRetrieve(names:list[str]):
+    return listVDB(names).as_retriever(search_type = 'mmr')
 
 def raptRetrieve():
     retriever = getVDB().as_retriever(search_type = "mmr")
@@ -67,3 +88,6 @@ def union(docs: list[list]):
 
 #retv = getRetriever(getVDB())
 #print(retv.invoke("来晚了咋办"))
+
+#vdb = getVDB()
+#vdb.delete_collection()

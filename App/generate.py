@@ -21,7 +21,10 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 
 vdb = getVDB()
 retriever = getRetriever(vdb)
-llm = getLLM(0.5)
+llm = getLLM(0.01)
+names = ["IT", "HR"]
+retriever_all = allRetrieve(names)
+#retriever_all = ""
 
 def create_history_aware_retriever(
     llm: LanguageModelLike,
@@ -64,18 +67,16 @@ def genHist(question: str, id:str, store:dict):
         ("human", "{input}")
     ])
     contextualize_q_system_prompt = (
-        "Given a chat history and the latest user question "
-        "which might reference context in the chat history, "
-        "formulate a standalone question which can be understood "
-        "without the chat history. Do NOT answer the question, "
-        "just reformulate it if needed and otherwise return it as is"
+        """Rephrase the follow-up message from a given conversation to function as an independent message,
+        unless it is a request to change topics or deviates from the subject of history. Continue the conversation from the previous messages. 
+        If there is no chat history, simply reformat the follow-up input into an initial standalone message starting from the conversation"""
     )
     prompt = ChatPromptTemplate.from_messages([
         ("system", contextualize_q_system_prompt),
         MessagesPlaceholder("chat_history"),
         ("human", "{input}")
     ])
-    history_aware_retriever = create_history_aware_retriever(llm, raptRetrieve() , prompt)
+    history_aware_retriever = create_history_aware_retriever(llm, retriever_all , prompt)
     qa_chain = create_stuff_documents_chain(llm, q_prompt)
     rag_chain = create_retrieval_chain(history_aware_retriever, qa_chain)
     conversational_rag_chain = RunnableWithMessageHistory(
@@ -88,7 +89,7 @@ def genHist(question: str, id:str, store:dict):
     
 
     answer = conversational_rag_chain.stream({"input": question}, config = {"configurable": {"session_id": id}})
-    return answer
+    return answer, store
 
 
 def multiGen(question):
@@ -124,13 +125,13 @@ def normalGen(question):
 
     rag_chain = (
         {
-            "context": raptRetrieve() | format_docs, "question": RunnablePassthrough()
+            "context": allRetrieve(names) | format_docs, "question": RunnablePassthrough()
         }
             | prompt
             | llm
             | StrOutputParser()
     )
-    return rag_chain.invoke(question)
+    return rag_chain.stream(question)
 
 
 def decomposeGen(questions, q_a_pairs = ""):
