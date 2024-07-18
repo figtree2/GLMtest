@@ -12,11 +12,11 @@ html, body, #root, .full-screen-container, .full-screen-row, .full-screen-col {
 
 .scrollable-div {
     white-space: pre-wrap;
-    height:  650px;
+    height:  720px;
     overflow-y: scroll;
     border: 1px solid transparent;
     padding: 10px;
-    width: 100%;
+    width: 70%;
 }
 
 .bold{
@@ -27,6 +27,7 @@ html, body, #root, .full-screen-container, .full-screen-row, .full-screen-col {
     display: flex; 
     flex-direction: column; 
     align-items: center;
+    height: 100%;
 }
 
 .message{
@@ -47,11 +48,23 @@ html, body, #root, .full-screen-container, .full-screen-row, .full-screen-col {
 
 
 .left-column{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     background-color:black;
-    border: 2px solid black;
 }
 
 .right-column{
-    background-color: gray;
-    border: 2px solid gray;
+    background: linear-gradient(45deg,#47d16a,  #00baa2, #2bced6);
+}
+
+.row-bottom {
+    padding: 10px;
+    height: 10%;
+}
+
+.row-bottom .btn {
+    width: 18%;
+    height: 70%;
+    border-radius: 50%;
 }

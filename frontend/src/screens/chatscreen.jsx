@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Row, Col, Container, Form, Button, InputGroup, ListGroup } from 'react-bootstrap'
+import { Row, Col, Container, Form, Button, InputGroup, ListGroup, Modal } from 'react-bootstrap'
 import { FaPaperPlane, FaPlus } from 'react-icons/fa'
 import io from 'socket.io-client'
 import '../styles/main.scss'
@@ -8,15 +8,28 @@ import '../styles/textbox.scss'
 const socket = io('http://127.0.0.1:5000')
 
 function App() {
-  const [curId, setCurId] = useState('对话三')
+  const [showModal, setShowModal] = useState(false)
+  const [addinput, setAddInput] = useState('')
+  const [curId, setCurId] = useState('对话一')
   const textAreaRef = useRef(null)
   const [input, setInput] = useState('')
-  const [messages, setMessages] = useState([])
+  const initMessages = () => {
+    const storedData = localStorage.getItem('chats')
+    if(storedData) {
+      const data = JSON.parse(storedData)
+      if(data[curId]){
+        return data[curId]
+      }
+    }
+    return []
+  }
+  const [messages, setMessages] = useState(initMessages)
   const [history, setHistory] = useState(() => {
     const storedHistory = localStorage.getItem('history')
     return storedHistory ? JSON.parse(storedHistory) : {};
   })  
   const chatRef = useRef(null)
+
 
   const scrollToBottom = () => {
     const chat = chatRef.current
@@ -40,14 +53,17 @@ function App() {
       textAreaRef.current.style.height = `${textAreaRef.current.scrollHeight}px`
     }
 
-
+    storeMessages(curId, messages)
 
     return ()=>{
       socket.off('message')
-      storeMessages(curId, messages)
     }
   
-  }, [curId, messages, input])
+  }, [messages, input, curId])
+
+  useEffect(() => {
+    getMessages(curId)
+  }, [curId])
 
   const storeHistory = (data) => {
     setHistory(data)
@@ -60,13 +76,18 @@ function App() {
     if (storedData) {
       const data = JSON.parse(storedData)
       console.log(data[id])
-      setMessages("")
+      setMessages([])
       if(data[id]){
         setMessages(data[id])
       }
     }
   }
 
+  const getChats = () => {
+    const storedData = localStorage.getItem('chats')
+    let data = storedData ? JSON.parse(storedData) : {};
+    return data
+  }
   const storeMessages = (id, message) => {
     const storedData = localStorage.getItem('chats')
     let data = storedData ? JSON.parse(storedData) : {};
@@ -80,6 +101,33 @@ function App() {
     }
 
     localStorage.setItem('chats', JSON.stringify(data))
+  }
+
+  const handleCreate = async (e) => {
+    e.preventDefault()
+    const storedData = localStorage.getItem('chats')
+    let data = storedData ? JSON.parse(storedData) : {};
+
+
+    if(addinput === ''){
+      setAddInput('')
+      return 
+    }
+    else if(data[addinput]){
+      setCurId(addinput)
+      handleCloseModal()
+      getMessages(addinput)
+      setAddInput('')
+      return
+    }
+    else{
+      data[addinput] = ""
+      setCurId(addinput)
+      handleCloseModal()
+      getMessages(addinput)
+      setAddInput('')
+      return
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -133,11 +181,11 @@ function App() {
       }
       
     })
-
   
   }
 
-
+  const handleShowModal = () => setShowModal(true);
+  const handleCloseModal = () => setShowModal(false);
   return (
     <Container fluid>
       <Row>
@@ -153,9 +201,13 @@ function App() {
               ))}
             </ListGroup>
           </div>
+          <Row className = "row-bottom">
+            <Button variant = 'primary' onClick = {handleShowModal}><FaPlus /></Button>
+          </Row>
         </Col>
         <Col xs = {12} md = {10} className = "right-column">
-        <div className = "container" >
+            <Container fluid>
+            <div className = "container" >
       <div className = "scrollable-div" id = "chat" ref = {chatRef}>
         {renderMessages()}
       </div>
@@ -176,8 +228,32 @@ function App() {
         </InputGroup>
       </Form>
     </div>
+            </Container>
         </Col>
       </Row>
+
+      <Modal show = {showModal} onHide = {handleCloseModal}>
+          <Modal.Header>
+            <Modal.Title>创造新对话界面</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form onSubmit = {handleCreate} className = "pretty-textbox-form">
+              <InputGroup>
+              <Form.Control 
+              as = 'textarea'
+              rows = {1}
+              ref = {textAreaRef}
+              type = 'text'
+              value = {addinput}
+              onChange={(e) => setAddInput(e.target.value)}
+              onKeyDown={(e) => {if(e.key === 'Enter' && !e.shiftKey){setAddInput(e.target.form.requestSubmit())}}}
+              placeholder = "请输入对话名称"
+              className = "pretty-textbox2"
+              />
+              </InputGroup>
+            </Form>
+          </Modal.Body>
+      </Modal>
     </Container>
   )
 }
