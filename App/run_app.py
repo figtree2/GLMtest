@@ -1,6 +1,16 @@
 from generate import *
 import json
 from langchain.memory import ChatMessageHistory
+import os
+
+
+def get_vecs():
+    list = []
+    path = "./app/data/vectors/databases"
+    for name in os.listdir(path):
+        if name != '.DS_Store':
+            list.append(name)
+    return list
 
 def run_app(question, store, test_id):
     answer = genHist(question, test_id, store)

@@ -37,6 +37,13 @@ def run_app_back(input_text, store, id):
         socketio.emit('message', {'data': '\n'})
         socketio.emit('history', {'history': store2})
 
+@socketio.on('getVecs')
+def get_dbs():
+    try: 
+        emit('vectors', get_vecs())
+    except Exception as e:
+        emit('error', {'message': str(e)})
+
 @socketio.on('connect')
 def handle_connect():
     print("connected")

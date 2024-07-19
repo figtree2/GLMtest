@@ -12,11 +12,13 @@ html, body, #root, .full-screen-container, .full-screen-row, .full-screen-col {
 
 .scrollable-div {
     white-space: pre-wrap;
-    height:  720px;
+    height:  700px;
     overflow-y: scroll;
-    border: 1px solid transparent;
+    border-radius: 15px;
     padding: 10px;
     width: 70%;
+    background: white;
+
 }
 
 .bold{
@@ -52,11 +54,9 @@ html, body, #root, .full-screen-container, .full-screen-row, .full-screen-col {
     flex-direction: column;
     justify-content: space-between;
     background-color:black;
+    border-radius: 15px;
 }
 
-.right-column{
-    background: linear-gradient(45deg,#47d16a,  #00baa2, #2bced6);
-}
 
 .row-bottom {
     padding: 10px;

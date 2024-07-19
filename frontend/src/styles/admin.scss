@@ -1,0 +1,28 @@
+html, body, #root, .full-screen-container, .full-screen-row, .full-screen-col {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(45deg,#47d16a,  #00baa2, #2bced6);
+}
+
+.admin-container {
+    height: 100%;
+}
+
+.left {
+    background: black;
+    border-radius: 15px;
+    color: white;
+    height: 700px;
+}
+
+.right{
+    background: white;
+    border-radius: 15px;
+}
+
+.spacer {
+    height: 15px;
+    background:black;
+}
